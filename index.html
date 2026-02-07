@@ -8,15 +8,14 @@
 </head>
 <body>
     <!-- three.js library as global script -->
-    <script src="https://cdn.jsdelivr.net/npm/three@r128/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@r128/build/three.min.js"></script>
     
     <!-- importmap for ES6 modules to resolve bare imports -->
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@r128/build/three.module.js",
-            "three/addons/webxr/ARButton.js": "https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/webxr/ARButton.js",
-            "three/addons/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/loaders/GLTFLoader.js"
+            "three": "https://unpkg.com/three@r128/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@r128/examples/jsm/"
         }
     }
     </script>
