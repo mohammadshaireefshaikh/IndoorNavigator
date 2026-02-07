@@ -12,7 +12,17 @@
     <script src="https://unpkg.com/three@0.163.0/examples/jsm/webxr/ARButton.js"></script>
     <script src="https://unpkg.com/three@0.163.0/examples/jsm/loaders/GLTFLoader.js"></script>
 
-    <!-- Your app logic -->
+    <video
+        id="videoElement"
+        autoplay
+        playsinline
+        muted
+        disablePictureInPicture
+        style="display: none;"
+    ></video>
+
+    <!-- Bottom-left camera permission indicator (only shown when feed unavailable) -->
+    <div id="cameraIndicator">Tap to enable camera</div>
     <script type="module" src="app.js"></script>
 </body>
 </html>
