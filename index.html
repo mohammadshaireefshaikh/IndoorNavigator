@@ -7,22 +7,21 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Three.js + WebXR scripts -->
-    <script src="https://unpkg.com/three@0.163.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.163.0/examples/jsm/webxr/ARButton.js"></script>
-    <script src="https://unpkg.com/three@0.163.0/examples/jsm/loaders/GLTFLoader.js"></script>
+    <!-- three.js library as global script -->
+    <script src="https://cdn.jsdelivr.net/npm/three@r128/build/three.min.js"></script>
+    
+    <!-- importmap for ES6 modules to resolve bare imports -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@r128/build/three.module.js",
+            "three/addons/webxr/ARButton.js": "https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/webxr/ARButton.js",
+            "three/addons/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/loaders/GLTFLoader.js"
+        }
+    }
+    </script>
 
-    <video
-        id="videoElement"
-        autoplay
-        playsinline
-        muted
-        disablePictureInPicture
-        style="display: none;"
-    ></video>
-
-    <!-- Bottom-left camera permission indicator (only shown when feed unavailable) -->
-    <div id="cameraIndicator">Tap to enable camera</div>
+    <!-- Your WebXR AR app as an ES6 module -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
