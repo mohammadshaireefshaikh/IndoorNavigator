@@ -1,8 +1,6 @@
 // WebXR AR + Three.js hit-test placement with GLTF model and reticle.
-// No visible UI except:
-// - Camera background (from WebXR)
-// - Browser-required AR button
-// - Subtle reticle only when plane detected
+// Works best on Android Chrome with WebXR support
+// On Windows: Shows 3D scene but AR features disabled (by design)
 
 import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -14,11 +12,19 @@ let hitTestSourceRequested = false;
 let xrRefSpace = null;
 let gltfScene = null;
 
+// Debug logging
+console.log('🚀 WebXR AR App initializing...');
+console.log('Platform:', navigator.userAgent);
+console.log('WebXR supported:', !!navigator.xr);
+
 init();
 
 function init() {
+    console.log('📍 Initializing Three.js scene...');
+    
     // Scene
     scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222222);
 
     camera = new THREE.PerspectiveCamera(
         70,
@@ -38,6 +44,7 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
+    console.log('✅ Renderer created, canvas added to page');
 
     // Lighting: ambient + directional for more realistic shading
     const ambientLight = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 0.6);
@@ -50,6 +57,7 @@ function init() {
     dirLight.shadow.camera.near = 0.1;
     dirLight.shadow.camera.far = 20;
     scene.add(dirLight);
+    console.log('✅ Lighting added');
 
     // Reticle for plane indication
     const ringGeo = new THREE.RingGeometry(0.06, 0.08, 32);
@@ -63,11 +71,13 @@ function init() {
     reticle.matrixAutoUpdate = false;
     reticle.visible = false;
     scene.add(reticle);
+    console.log('✅ Reticle created');
 
     // Load GLTF / GLB model
     const loader = new GLTFLoader();
+    console.log('📦 Loading 3D model from Immersive Web examples...');
+    
     loader.load(
-        // Replace with your own glb/gltf URL
         'https://immersive-web.github.io/webxr-samples/media/gltf/sunflower/sunflower.gltf',
         (gltf) => {
             gltfScene = gltf.scene;
@@ -77,19 +87,27 @@ function init() {
                     obj.receiveShadow = true;
                 }
             });
+            console.log('✅ Model loaded successfully!');
         },
         undefined,
         (error) => {
-            console.error('Error loading model', error);
+            console.error('❌ Error loading model:', error);
         }
     );
 
     // ARButton – handles feature detection and permission flow
+    console.log('🔘 Creating AR Button...');
     const arButton = ARButton.createButton(renderer, {
         requiredFeatures: ['hit-test'],
         optionalFeatures: ['local-floor', 'bounded-floor', 'light-estimation']
     });
     document.body.appendChild(arButton);
+    
+    if (!navigator.xr) {
+        console.warn('⚠️ WebXR not supported on this device (Windows/Desktop)');
+        console.warn('   AR features will be disabled');
+        console.log('💡 To test AR: Use Android Chrome on a supported device');
+    }
 
     renderer.xr.addEventListener('sessionstart', onSessionStart);
     renderer.xr.addEventListener('sessionend', onSessionEnd);
@@ -102,24 +120,25 @@ function init() {
 
     // WebXR render loop
     renderer.setAnimationLoop(render);
+    console.log('✅ Render loop started');
 }
 
 async function onSessionStart() {
+    console.log('🎯 AR Session started!');
     const session = renderer.xr.getSession();
-    // If permission is denied or AR unsupported, this is never called:
-    // that automatically prevents AR session start.
 
     xrRefSpace = await session.requestReferenceSpace('local');
-
     const viewerSpace = await session.requestReferenceSpace('viewer');
     hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
     hitTestSourceRequested = true;
+    console.log('✅ Hit test source initialized');
 
     session.addEventListener('end', () => {
         hitTestSourceRequested = false;
         hitTestSource = null;
         xrRefSpace = null;
         reticle.visible = false;
+        console.log('🛑 AR Session ended');
     });
 }
 
@@ -139,6 +158,8 @@ function onPointerDown() {
 
     const session = renderer.xr.getSession();
     if (!session) return;
+
+    console.log('📍 Model placed at hit test location');
 
     // Clone model so multiple placements are possible
     const clone = gltfScene.clone(true);
