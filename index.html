@@ -2,109 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Camera Feed with 3D Model Viewer Placeholder</title>
-    <!-- Link external CSS file -->
+    <title>WebXR AR Hit-Test Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>📹 Live Camera Feed Viewer</h1>
-            <p>Real-time video stream with 3D model visualization placeholder</p>
-        </div>
+    <!-- Three.js + WebXR scripts -->
+    <script src="https://unpkg.com/three@0.163.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.163.0/examples/jsm/webxr/ARButton.js"></script>
+    <script src="https://unpkg.com/three@0.163.0/examples/jsm/loaders/GLTFLoader.js"></script>
 
-        <!-- Content Area -->
-        <div class="content">
-            <!-- Status Messages -->
-            <div id="statusMessage" class="status-message"></div>
-
-            <!-- Control Panel -->
-            <div class="control-panel">
-                <button id="startBtn" class="btn-primary">
-                    <span>▶️</span> Start Camera
-                </button>
-                <button id="stopBtn" class="btn-secondary" disabled>
-                    <span>⏹️</span> Stop Camera
-                </button>
-                <button id="permissionBtn" class="btn-secondary">
-                    <span>🔐</span> Check Permissions
-                </button>
-            </div>
-
-            <!-- Viewer Container with Camera Feed and 3D Placeholder -->
-            <div class="viewer-container">
-                <!-- Video Element: Displays live camera feed -->
-                <video
-                    id="videoElement"
-                    autoplay
-                    playsinline
-                    muted
-                    disablePictureInPicture
-                ></video>
-
-                <!-- 3D Model Viewer Placeholder -->
-                <!-- This overlay is positioned absolutely over the video feed -->
-                <!-- It can be replaced with a Three.js viewer or any 3D library -->
-                <div class="model-viewer-placeholder">
-                    <div class="placeholder-content">
-                        <div class="placeholder-icon">🎨</div>
-                        <h2>3D Model Viewer</h2>
-                        <p>Three.js viewer will appear here</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Information Section -->
-            <div class="info-section">
-                <h3>📋 Instructions & Integration Guide</h3>
-                <p>
-                    <strong>Current Status:</strong> Live camera feed displays in real-time above.
-                    The 3D model viewer placeholder is ready for integration.
-                </p>
-                <p>
-                    <strong>To integrate Three.js:</strong>
-                </p>
-                <p style="margin-left: 16px; margin-top: 8px;">
-                    1. Remove or hide the <code>.model-viewer-placeholder</code> div<br>
-                    2. Create a <code>&lt;canvas&gt;</code> element for Three.js inside the <code>.viewer-container</code><br>
-                    3. Initialize Three.js with proper sizing and camera settings<br>
-                    4. Position the canvas absolutely to overlay the video feed (if desired)
-                </p>
-                <p style="margin-top: 12px; font-style: italic; opacity: 0.8;">
-                    See app.js file for detailed integration instructions.
-                </p>
-                <button id="toggleDeviceInfo" class="btn-secondary" style="width: auto; margin-top: 12px; font-size: 12px;">
-                    Show Device Info
-                </button>
-            </div>
-
-            <!-- Device Information (Hidden by default) -->
-            <div id="deviceInfo" class="device-info">
-                <div class="device-info-item">
-                    <span class="device-info-label">Browser:</span>
-                    <span class="device-info-value" id="browserInfo">Detecting...</span>
-                </div>
-                <div class="device-info-item">
-                    <span class="device-info-label">Platform:</span>
-                    <span class="device-info-value" id="platformInfo">Detecting...</span>
-                </div>
-                <div class="device-info-item">
-                    <span class="device-info-label">Viewport:</span>
-                    <span class="device-info-value" id="viewportInfo">Detecting...</span>
-                </div>
-                <div class="device-info-item">
-                    <span class="device-info-label">Cameras Detected:</span>
-                    <span class="device-info-value" id="cameraCount">Checking...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Link external JavaScript file -->
-    <script src="app.js"></script>
+    <!-- Your app logic -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
