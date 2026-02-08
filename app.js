@@ -33,11 +33,24 @@ function init() {
         20
     );
 
-    // Renderer
+    // Renderer - with WebGL safety settings
     renderer = new THREE.WebGLRenderer({
         antialias: true,
-        alpha: true
+        alpha: true,
+        powerPreference: 'high-performance',
+        failIfMajorPerformanceCaveat: false
     });
+    
+    // Add error handling for WebGL
+    renderer.domElement.addEventListener('webglcontextlost', (event) => {
+        console.error('❌ WebGL context lost!', event);
+        event.preventDefault();
+    }, false);
+
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+        console.log('✅ WebGL context restored');
+    }, false);
+
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
@@ -59,13 +72,14 @@ function init() {
     scene.add(dirLight);
     console.log('✅ Lighting added');
 
-    // Reticle for plane indication
+    // Reticle for plane indication - simpler geometry to avoid shader issues
     const ringGeo = new THREE.RingGeometry(0.06, 0.08, 32);
     ringGeo.rotateX(-Math.PI / 2); // lie flat on horizontal surface
     const ringMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         opacity: 0.9,
-        transparent: true
+        transparent: true,
+        side: THREE.DoubleSide
     });
     reticle = new THREE.Mesh(ringGeo, ringMat);
     reticle.matrixAutoUpdate = false;
@@ -89,7 +103,9 @@ function init() {
             });
             console.log('✅ Model loaded successfully!');
         },
-        undefined,
+        (progress) => {
+            console.log('📦 Loading progress:', (progress.loaded / progress.total * 100).toFixed(0) + '%');
+        },
         (error) => {
             console.error('❌ Error loading model:', error);
         }
@@ -97,11 +113,17 @@ function init() {
 
     // ARButton – handles feature detection and permission flow
     console.log('🔘 Creating AR Button...');
-    const arButton = ARButton.createButton(renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['local-floor', 'bounded-floor', 'light-estimation']
-    });
-    document.body.appendChild(arButton);
+    try {
+        const arButton = ARButton.createButton(renderer, {
+            requiredFeatures: ['hit-test'],
+            optionalFeatures: ['local-floor', 'bounded-floor', 'light-estimation'],
+            domOverlay: { root: document.body }
+        });
+        document.body.appendChild(arButton);
+        console.log('✅ AR Button created successfully');
+    } catch (e) {
+        console.error('❌ Error creating AR button:', e);
+    }
     
     if (!navigator.xr) {
         console.warn('⚠️ WebXR not supported on this device (Windows/Desktop)');
@@ -119,7 +141,13 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 
     // WebXR render loop
-    renderer.setAnimationLoop(render);
+    renderer.setAnimationLoop((time, frame) => {
+        try {
+            render(time, frame);
+        } catch (e) {
+            console.error('❌ Render error:', e);
+        }
+    });
     console.log('✅ Render loop started');
 }
 
@@ -127,11 +155,15 @@ async function onSessionStart() {
     console.log('🎯 AR Session started!');
     const session = renderer.xr.getSession();
 
-    xrRefSpace = await session.requestReferenceSpace('local');
-    const viewerSpace = await session.requestReferenceSpace('viewer');
-    hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-    hitTestSourceRequested = true;
-    console.log('✅ Hit test source initialized');
+    try {
+        xrRefSpace = await session.requestReferenceSpace('local');
+        const viewerSpace = await session.requestReferenceSpace('viewer');
+        hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+        hitTestSourceRequested = true;
+        console.log('✅ Hit test source initialized');
+    } catch (e) {
+        console.error('❌ Error initializing hit test:', e);
+    }
 
     session.addEventListener('end', () => {
         hitTestSourceRequested = false;
@@ -143,6 +175,7 @@ async function onSessionStart() {
 }
 
 function onSessionEnd() {
+    console.log('🔌 Session ending, hiding reticle');
     reticle.visible = false;
 }
 
@@ -154,57 +187,77 @@ function onWindowResize() {
 
 function onPointerDown() {
     // Only place if reticle is visible and model loaded
-    if (!reticle.visible || !gltfScene) return;
+    if (!reticle.visible || !gltfScene) {
+        console.log('⏭️ Tap ignored - reticle visible:', !!reticle.visible, 'model loaded:', !!gltfScene);
+        return;
+    }
 
     const session = renderer.xr.getSession();
-    if (!session) return;
+    if (!session) {
+        console.log('⏭️ Tap ignored - no active session');
+        return;
+    }
 
-    console.log('📍 Model placed at hit test location');
+    try {
+        console.log('📍 Model placed at hit test location');
 
-    // Clone model so multiple placements are possible
-    const clone = gltfScene.clone(true);
+        // Clone model so multiple placements are possible
+        const clone = gltfScene.clone(true);
 
-    // Use reticle matrix (from latest hit-test) for pose
-    const poseMatrix = new THREE.Matrix4().fromArray(reticle.matrix.elements);
-    clone.position.setFromMatrixPosition(poseMatrix);
-    clone.quaternion.setFromRotationMatrix(poseMatrix);
+        // Use reticle matrix (from latest hit-test) for pose
+        const poseMatrix = new THREE.Matrix4().fromArray(reticle.matrix.elements);
+        clone.position.setFromMatrixPosition(poseMatrix);
+        clone.quaternion.setFromRotationMatrix(poseMatrix);
 
-    // Adjust scale if needed for realistic size (depends on model units)
-    // clone.scale.set(1, 1, 1);
+        // Adjust scale if needed for realistic size (depends on model units)
+        // clone.scale.set(1, 1, 1);
 
-    // Simple shadow receiver under object for grounding
-    const shadowGeo = new THREE.CircleGeometry(0.25, 32).rotateX(-Math.PI / 2);
-    const shadowMat = new THREE.MeshPhongMaterial({
-        color: 0x000000,
-        opacity: 0.3,
-        transparent: true
-    });
-    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    shadowMesh.receiveShadow = true;
-    shadowMesh.position.set(0, 0.001, 0); // slightly above plane
-    clone.add(shadowMesh);
+        // Simple shadow receiver under object for grounding
+        const shadowGeo = new THREE.CircleGeometry(0.25, 32);
+        shadowGeo.rotateX(-Math.PI / 2);
+        const shadowMat = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            opacity: 0.3,
+            transparent: true
+        });
+        const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+        shadowMesh.receiveShadow = true;
+        shadowMesh.position.set(0, 0.001, 0); // slightly above plane
+        clone.add(shadowMesh);
 
-    scene.add(clone);
+        scene.add(clone);
+        console.log('✅ Model added to scene');
+    } catch (e) {
+        console.error('❌ Error placing model:', e);
+    }
 }
 
 function render(timestamp, frame) {
-    const session = renderer.xr.getSession();
+    try {
+        const session = renderer.xr.getSession();
 
-    if (session && hitTestSourceRequested && frame && xrRefSpace && hitTestSource) {
-        const hitTestResults = frame.getHitTestResults(hitTestSource);
+        if (session && hitTestSourceRequested && frame && xrRefSpace && hitTestSource) {
+            try {
+                const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-        if (hitTestResults.length > 0) {
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(xrRefSpace);
+                if (hitTestResults.length > 0) {
+                    const hit = hitTestResults[0];
+                    const pose = hit.getPose(xrRefSpace);
 
-            if (pose) {
-                reticle.visible = true;
-                reticle.matrix.fromArray(pose.transform.matrix);
+                    if (pose) {
+                        reticle.visible = true;
+                        reticle.matrix.fromArray(pose.transform.matrix);
+                    }
+                } else {
+                    reticle.visible = false;
+                }
+            } catch (e) {
+                console.error('❌ Hit test error:', e);
             }
-        } else {
-            reticle.visible = false;
         }
-    }
 
-    renderer.render(scene, camera);
+        renderer.render(scene, camera);
+    } catch (e) {
+        console.error('❌ Render loop error:', e);
+    }
 }
