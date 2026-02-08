@@ -13,6 +13,40 @@ let gltfScene = null;
 
 console.log('🚀 WebXR AR App initializing...');
 
+// Detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isAndroid = /Android/.test(navigator.userAgent);
+
+console.log('📱 Platform:', isIOS ? 'iOS' : isAndroid ? 'Android' : 'Other');
+console.log('🌐 WebXR supported:', !!navigator.xr);
+
+// Show warning for iOS users before initializing
+if (isIOS) {
+    console.warn('⚠️ iOS does not support WebXR yet');
+    console.warn('💡 For best AR experience, use Android Chrome');
+    
+    // Add visual warning to page
+    const warning = document.createElement('div');
+    warning.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #ff6b6b;
+        color: white;
+        padding: 16px;
+        text-align: center;
+        font-family: system-ui;
+        z-index: 9999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    warning.innerHTML = `
+        <strong>⚠️ iOS Limitation:</strong> WebXR AR not yet supported on iPhone/iPad.<br>
+        Try on Android Chrome for full AR experience.
+    `;
+    document.body.appendChild(warning);
+}
+
 init();
 
 function init() {
@@ -158,7 +192,6 @@ function render(time, frame) {
     const session = renderer.xr.getSession();
 
     if (!session) {
-        console.log('⏸️ No active session');
         return;
     }
 
