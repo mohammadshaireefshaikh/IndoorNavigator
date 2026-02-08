@@ -158,7 +158,6 @@ function render(time, frame) {
     const session = renderer.xr.getSession();
 
     if (!session) {
-        console.log('⏸️ No active session');
         return;
     }
 
